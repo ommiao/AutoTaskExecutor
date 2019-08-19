@@ -1,0 +1,48 @@
+apply plugin: 'com.android.application'
+
+android {
+
+    compileSdkVersion COMPILE_SDK_VERSION
+    buildToolsVersion BUILD_TOOL_VERSION
+
+    defaultConfig {
+        applicationId "cn.ommiao.autotaskexecutor"
+        minSdkVersion MIN_SDK_VERSION
+        targetSdkVersion TARGET_SDK_VERSION
+        versionCode VERSION_CODE
+        versionName VERSION_NAME
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility = '1.8'
+        targetCompatibility = '1.8'
+    }
+
+    android.applicationVariants.all { variant ->
+        variant.outputs.all {
+            if (outputFileName.endsWith('.apk')) {
+                outputFileName = "AutoTaskExecutor_${versionName}.apk"
+            }
+        }
+    }
+
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation project(path: ':base')
+    testImplementation 'junit:junit:4.12'
+    androidTestImplementation 'androidx.test:runner:1.2.0'
+    androidTestImplementation 'androidx.test.uiautomator:uiautomator:2.2.0'
+    androidTestImplementation 'androidx.test:core:1.2.0'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
+    androidTestImplementation project(path: ':base')
+}

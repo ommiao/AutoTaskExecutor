@@ -1,0 +1,9 @@
+{
+  "orders": [
+    {
+      "findRule": "device",
+      "action": "home",
+      "uiInfo": {}
+    }
+  ]
+}
