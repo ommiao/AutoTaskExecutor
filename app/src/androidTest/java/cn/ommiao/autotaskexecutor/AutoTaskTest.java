@@ -8,6 +8,7 @@ import androidx.test.runner.AndroidJUnit4;
 import androidx.test.uiautomator.UiDevice;
 import androidx.test.uiautomator.UiObject;
 import androidx.test.uiautomator.UiObjectNotFoundException;
+import androidx.test.uiautomator.UiScrollable;
 import androidx.test.uiautomator.UiSelector;
 
 import com.orhanobut.logger.Logger;
@@ -70,41 +71,50 @@ public class AutoTaskTest {
             Order order = task.orders.get(0);
             UiObject uiObject;
 
-            switch (order.findRule) {
-                default:
-                case "device":
-                    uiObject = null;
-                    break;
-                case "description":
-                    uiObject = uiDevice.findObject(new UiSelector().description(order.uiInfo.description));
-                    break;
-                case "id":
-                    uiObject = uiDevice.findObject(new UiSelector().resourceId(order.uiInfo.id));
-                    break;
-                case "text":
-                    uiObject = uiDevice.findObject(new UiSelector().text(order.uiInfo.text));
-                    break;
-            }
-
             try {
+
+                switch (order.findRule) {
+                    default:
+                    case DEVICE:
+                        uiObject = null;
+                        break;
+                    case DESCRIPTION:
+                        uiObject = uiDevice.findObject(new UiSelector().description(order.uiInfo.description));
+                        break;
+                    case ID:
+                        uiObject = uiDevice.findObject(new UiSelector().resourceId(order.uiInfo.id));
+                        break;
+                    case TEXT:
+                        uiObject = uiDevice.findObject(new UiSelector().text(order.uiInfo.text));
+                        break;
+                    case ID_SCROLL_CHILD_TEXT:
+                        UiScrollable scrollableById = new UiScrollable(new UiSelector().resourceId(order.uiInfo.id));
+                        UiSelector selectorChildByText = new UiSelector().text(order.uiInfo.child.text);
+                        uiObject = scrollableById.getChild(selectorChildByText);
+                        scrollableById.scrollIntoView(uiObject);
+                        break;
+                }
 
                 switch (order.action) {
                     default:
                         //nothing to do
                         break;
-                    case "home":
+                    case HOME:
                         uiDevice.pressHome();
                         break;
-                    case "back":
+                    case BACK:
                         uiDevice.pressBack();
                         break;
-                    case "click":
+                    case CLICK:
                         uiObject.click();
                         break;
-                    case "clickPosition":
+                    case CLICK_POSITION:
                         int clickPosX = Integer.parseInt(order.uiInfo.position.split(",")[0]);
                         int clickPosY = Integer.parseInt(order.uiInfo.position.split(",")[1]);
                         uiDevice.click(clickPosX, clickPosY);
+                        break;
+                    case FORCE_STOP:
+                        uiDevice.executeShellCommand("am force-stop " + order.uiInfo.targetPackageName);
                         break;
                 }
 
@@ -120,10 +130,12 @@ public class AutoTaskTest {
 
             } catch (UiObjectNotFoundException e) {
                 e.printStackTrace();
-                if(order.uiInfo.alternate != null){
-                    order.uiInfo = order.uiInfo.alternate;
+                if(order.alternate != null){
+                    order = order.alternate;
                 }
             } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (IOException e){
                 e.printStackTrace();
             }
 
