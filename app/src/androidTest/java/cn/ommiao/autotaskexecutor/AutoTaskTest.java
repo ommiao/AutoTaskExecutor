@@ -5,6 +5,7 @@ import android.content.Context;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
+import androidx.test.uiautomator.Configurator;
 import androidx.test.uiautomator.UiDevice;
 import androidx.test.uiautomator.UiObject;
 import androidx.test.uiautomator.UiObjectNotFoundException;
@@ -37,6 +38,9 @@ import static org.junit.Assert.assertNotNull;
  */
 @RunWith(AndroidJUnit4.class)
 public class AutoTaskTest {
+
+    private static final long DEFAULT_TIMEOUT = 5000;
+
     private Context context;
     private UiDevice uiDevice;
     private Task task;
@@ -79,6 +83,8 @@ public class AutoTaskTest {
                         break;
                     }
                     Order order = group.orders.get(orderIndex);
+                    long timeout = order.timeout == 0 ? DEFAULT_TIMEOUT : order.timeout;
+                    Configurator.getInstance().setWaitForSelectorTimeout(timeout < 1000 ? 1000 : timeout);
                     UiObject uiObject;
                     try {
                         switch (order.findRule) {
