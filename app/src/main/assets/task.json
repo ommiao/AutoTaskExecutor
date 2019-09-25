@@ -1,9 +1,28 @@
 {
-  "orders": [
+  "groups": [
     {
-      "findRule": "device",
-      "action": "home",
-      "uiInfo": {}
+      "groupName": "指令组1",
+      "repeatTimes": 1,
+      "orders": [
+        {
+          "action": "HOME",
+          "delay": 1000,
+          "repeatTimes": 1,
+          "uiInfo": {},
+          "notFoundEvent": "ERROR"
+        },
+        {
+          "action": "CLICK",
+          "delay": 1000,
+          "repeatTimes": 1,
+          "uiInfo": {
+            "findRules": {
+              "TEXT": "Clock"
+            }
+          },
+          "notFoundEvent": "ERROR"
+        }
+      ]
     }
   ]
 }

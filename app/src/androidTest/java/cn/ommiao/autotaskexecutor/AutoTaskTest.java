@@ -5,11 +5,12 @@ import android.content.Context;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
+import androidx.test.uiautomator.BySelector;
 import androidx.test.uiautomator.Configurator;
 import androidx.test.uiautomator.UiDevice;
 import androidx.test.uiautomator.UiObject;
+import androidx.test.uiautomator.UiObject2;
 import androidx.test.uiautomator.UiObjectNotFoundException;
-import androidx.test.uiautomator.UiScrollable;
 import androidx.test.uiautomator.UiSelector;
 
 import com.orhanobut.logger.Logger;
@@ -20,10 +21,12 @@ import org.junit.runner.RunWith;
 
 import java.io.IOException;
 
+import cn.ommiao.base.entity.order.ExecuteParam;
 import cn.ommiao.base.entity.order.Group;
 import cn.ommiao.base.entity.order.NotFoundEvent;
 import cn.ommiao.base.entity.order.Order;
 import cn.ommiao.base.entity.order.Task;
+import cn.ommiao.base.entity.order.UiInfo;
 import cn.ommiao.base.util.FileUtil;
 import cn.ommiao.base.util.OrderUtil;
 import cn.ommiao.base.util.StringUtil;
@@ -50,8 +53,8 @@ public class AutoTaskTest {
         uiDevice = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation());
         assertNotNull(uiDevice);
         try {
-            uiDevice.executeShellCommand("pm grant cn.ommiao.autotaskexecutor android.permission.READ_EXTERNAL_STORAGE");
-            uiDevice.executeShellCommand("pm grant cn.ommiao.autotaskexecutor android.permission.WRITE_EXTERNAL_STORAGE");
+            uiDevice.executeShellCommand(ShellCommands.getReadExternalStorageCommand());
+            uiDevice.executeShellCommand(ShellCommands.getWriteExternalStorageCommand());
         } catch (IOException e) {
             e.printStackTrace();
             assert false;
@@ -85,34 +88,28 @@ public class AutoTaskTest {
                     Order order = group.orders.get(orderIndex);
                     long timeout = order.timeout == 0 ? DEFAULT_TIMEOUT : order.timeout;
                     Configurator.getInstance().setWaitForSelectorTimeout(timeout < 1000 ? 1000 : timeout);
+                    SelectorBuilder builder = SelectorBuilder.getInstance();
                     UiObject uiObject;
+                    UiObject2 uiObject2;
+                    UiSelector uiSelector, uiSelectorP;
+                    BySelector bySelector, bySelectorP;
                     try {
-                        switch (order.findRule) {
-                            default:
-                            case DEVICE:
-                                uiObject = null;
-                                break;
-                            case DESCRIPTION:
-                                uiObject = uiDevice.findObject(new UiSelector().description(order.uiInfo.description));
-                                break;
-                            case ID:
-                                uiObject = uiDevice.findObject(new UiSelector().resourceId(order.uiInfo.id));
-                                break;
-                            case TEXT:
-                                uiObject = uiDevice.findObject(new UiSelector().text(order.uiInfo.text));
-                                break;
-                            case TEXT_CONTAINS:
-                                uiObject = uiDevice.findObject(new UiSelector().textContains(order.uiInfo.text));
-                                break;
-                            case TEXT_PARENT_ID_SCROLL:
-                                UiScrollable scrollableById = new UiScrollable(new UiSelector().resourceId(order.uiInfo.id));
-                                UiSelector selectorChildByText = new UiSelector().text(order.uiInfo.child.text);
-                                uiObject = scrollableById.getChild(selectorChildByText);
-                                scrollableById.scrollIntoView(uiObject);
-                                break;
-                            case CLASSNAME:
-                                uiObject = uiDevice.findObject(new UiSelector().description(order.uiInfo.className));
-                                break;
+
+                        UiInfo uiInfo = order.uiInfo;
+                        builder.bind(uiInfo);
+                        uiSelector = builder.buildUiSelector();
+                        bySelector = builder.buildBySelector();
+
+                        if(order.uiInfo.parent != null){
+                            UiInfo parent = order.uiInfo.parent;
+                            builder.bind(parent);
+                            uiSelectorP = builder.buildUiSelector();
+                            bySelectorP = builder.buildBySelector();
+                            uiObject = uiDevice.findObject(uiSelectorP).getChild(uiSelector);
+                            uiObject2 = uiDevice.findObject(bySelectorP).findObject(bySelector);
+                        } else {
+                            uiObject = uiDevice.findObject(uiSelector);
+                            uiObject2 = uiDevice.findObject(bySelector);
                         }
 
                         switch (order.action) {
@@ -129,12 +126,13 @@ public class AutoTaskTest {
                                 uiObject.click();
                                 break;
                             case CLICK_POSITION:
-                                int clickPosX = Integer.parseInt(order.uiInfo.position.split(",")[0]);
-                                int clickPosY = Integer.parseInt(order.uiInfo.position.split(",")[1]);
+                                String position = order.getParamValue(ExecuteParam.POSITION);
+                                int clickPosX = Integer.parseInt(position.split(",")[0]);
+                                int clickPosY = Integer.parseInt(position.split(",")[1]);
                                 uiDevice.click(clickPosX, clickPosY);
                                 break;
                             case FORCE_STOP:
-                                uiDevice.executeShellCommand("am force-stop " + order.uiInfo.targetPackageName);
+                                uiDevice.executeShellCommand("am force-stop " + order.getParamValue(ExecuteParam.TARGET_PACKAGE));
                                 break;
                         }
 
