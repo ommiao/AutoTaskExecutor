@@ -21,7 +21,7 @@ import org.junit.runner.RunWith;
 
 import java.io.IOException;
 
-import cn.ommiao.base.entity.order.ExecuteParam;
+import cn.ommiao.base.entity.actionhelper.BaseActionHelper;
 import cn.ommiao.base.entity.order.Group;
 import cn.ommiao.base.entity.order.NotFoundEvent;
 import cn.ommiao.base.entity.order.Order;
@@ -112,28 +112,11 @@ public class AutoTaskTest {
                             uiObject2 = uiDevice.findObject(bySelector);
                         }
 
-                        switch (order.action) {
-                            default:
-                                //nothing to do
-                                break;
-                            case HOME:
-                                uiDevice.pressHome();
-                                break;
-                            case BACK:
-                                uiDevice.pressBack();
-                                break;
-                            case CLICK:
-                                uiObject.click();
-                                break;
-                            case CLICK_POSITION:
-                                String position = order.getParamValue(ExecuteParam.POSITION);
-                                int clickPosX = Integer.parseInt(position.split(",")[0]);
-                                int clickPosY = Integer.parseInt(position.split(",")[1]);
-                                uiDevice.click(clickPosX, clickPosY);
-                                break;
-                            case FORCE_STOP:
-                                uiDevice.executeShellCommand("am force-stop " + order.getParamValue(ExecuteParam.TARGET_PACKAGE));
-                                break;
+                        BaseActionHelper actionHelper = order.action.getActionHelper().with(order);
+                        if(actionHelper.isGlobalAction()){
+                            actionHelper.performGlobalAction(uiDevice);
+                        } else {
+                            actionHelper.performWidgetAction(uiObject, uiObject2);
                         }
 
                         if (order.delay > 0) {
@@ -174,9 +157,7 @@ public class AutoTaskTest {
                                 endFlag = true;
                                 break;
                         }
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    } catch (IOException e){
+                    } catch (InterruptedException | IOException e) {
                         e.printStackTrace();
                     }
                     if(endFlag){

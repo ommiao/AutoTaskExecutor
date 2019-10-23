@@ -1,18 +1,21 @@
 {
+  "taskName": "测试指令-打开时钟",
+  "taskDescription": "测试指令-打开时钟",
+  "taskVersion": "1.0.0",
   "groups": [
     {
       "groupName": "指令组1",
       "repeatTimes": 1,
       "orders": [
         {
-          "action": "HOME",
+          "action": "PRESS_HOME",
           "delay": 1000,
           "repeatTimes": 1,
           "uiInfo": {},
           "notFoundEvent": "ERROR"
         },
         {
-          "action": "CLICK",
+          "action": "CLICK_WIDGET",
           "delay": 1000,
           "repeatTimes": 1,
           "uiInfo": {
