@@ -40,6 +40,7 @@ import cn.ommiao.base.util.OrderUtil;
 import cn.ommiao.base.util.StringUtil;
 
 import static cn.ommiao.base.entity.order.Order.INFINITE;
+import static cn.ommiao.base.util.Constant.URI_EXECUTE_RESULT;
 import static org.junit.Assert.assertNotNull;
 
 /**
@@ -212,7 +213,7 @@ public class AutoTaskTest {
     }
 
     private void reportExecuteResult(){
-        Uri uri = Uri.parse("content://cn.ommiao.autotask.provider/executeresult");
+        Uri uri = Uri.parse(URI_EXECUTE_RESULT);
         ContentValues values = new ContentValues();
         values.put("executeResult", executeResult.toJson());
         context.getContentResolver().insert(uri, values);
