@@ -1,6 +1,7 @@
 {
-  "taskName": "测试指令-打开时钟",
-  "taskDescription": "测试指令-打开时钟",
+  "taskId": "ommiao",
+  "taskName": "测试指令-回到桌面",
+  "taskDescription": "测试指令，仅执行回到桌面",
   "taskVersion": "1.0.0",
   "groups": [
     {
@@ -12,18 +13,7 @@
           "delay": 1000,
           "repeatTimes": 1,
           "uiInfo": {},
-          "notFoundEvent": "ERROR"
-        },
-        {
-          "action": "CLICK_WIDGET",
-          "delay": 1000,
-          "repeatTimes": 1,
-          "uiInfo": {
-            "findRules": {
-              "TEXT": "Clock"
-            }
-          },
-          "notFoundEvent": "ERROR"
+          "exceptionEvent": "ERROR"
         }
       ]
     }

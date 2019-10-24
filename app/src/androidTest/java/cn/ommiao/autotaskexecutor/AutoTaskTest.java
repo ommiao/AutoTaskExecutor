@@ -21,12 +21,14 @@ import org.junit.runner.RunWith;
 
 import java.io.IOException;
 
+import cn.ommiao.autotaskexecutor.utils.ToastUtil;
 import cn.ommiao.base.entity.actionhelper.BaseActionHelper;
+import cn.ommiao.base.entity.order.ExceptionEvent;
 import cn.ommiao.base.entity.order.Group;
-import cn.ommiao.base.entity.order.NotFoundEvent;
 import cn.ommiao.base.entity.order.Order;
 import cn.ommiao.base.entity.order.Task;
 import cn.ommiao.base.entity.order.UiInfo;
+import cn.ommiao.base.exception.InjectEventException;
 import cn.ommiao.base.util.FileUtil;
 import cn.ommiao.base.util.OrderUtil;
 import cn.ommiao.base.util.StringUtil;
@@ -62,10 +64,11 @@ public class AutoTaskTest {
         context = ApplicationProvider.getApplicationContext();
         assertNotNull(context);
         String taskJson = FileUtil.readTask();
-        Logger.d(taskJson);
         if (StringUtil.isEmpty(taskJson)){
+            Logger.d("No task, execute test task.");
             taskJson = OrderUtil.readOrders(context);
         }
+        Logger.d(taskJson);
         task = Task.fromJson(taskJson, Task.class);
         assert task.groups.size() > 0;
     }
@@ -82,7 +85,7 @@ public class AutoTaskTest {
                 int orderIndex = 0;
                 boolean endFlag = false;
                 while (true){
-                    if(orderIndex == group.orders.size()){
+                    if(orderIndex >= group.orders.size()){
                         break;
                     }
                     Order order = group.orders.get(orderIndex);
@@ -133,7 +136,7 @@ public class AutoTaskTest {
                             continue;
                         }
 
-                    } catch (UiObjectNotFoundException e) {
+                    } catch (Exception e){
                         e.printStackTrace();
                         if(order.alternate != null){
                             order = order.alternate;
@@ -143,22 +146,28 @@ public class AutoTaskTest {
                             orderIndex++;
                             continue;
                         }
-                        switch (order.notFoundEvent){
-                            case ERROR:
-                                //stop because error
-                                return;
+                        switch (order.exceptionEvent){
                             case RETRY:
-                                order.notFoundEvent = NotFoundEvent.ERROR;
+                                order.exceptionEvent = ExceptionEvent.ERROR;
                                 continue;
-                            case IGNORE:
-                                orderIndex++;
+                            case IGNORE_ORDER:
+                                orderIndex += order.exceptionParam.IGNORE_ORDER_COUNT;
                                 continue;
                             case IGNORE_GROUP:
                                 endFlag = true;
                                 break;
                         }
-                    } catch (InterruptedException | IOException e) {
-                        e.printStackTrace();
+                        if(e instanceof UiObjectNotFoundException){
+                            execTaskFail();
+                            return;
+                        } else if(e instanceof InjectEventException){
+                            ToastUtil.shortToast("无法执行USB模拟点击：" + e.getMessage());
+                            execTaskFail();
+                            return;
+                        } else if(e instanceof InterruptedException || e instanceof IOException){
+                            execTaskFail();
+                            return;
+                        }
                     }
                     if(endFlag){
                         break;
@@ -171,5 +180,15 @@ public class AutoTaskTest {
             task.groups.remove(0);
         }
 
+        execTaskSuccess();
+
+    }
+
+    private void execTaskSuccess(){
+        Logger.d("Task [id:" + task.taskId + ", name:" + task.taskName + "] executed successfully.");
+    }
+
+    private void execTaskFail(){
+        Logger.d("Task [id:" + task.taskId + ", name:" + task.taskName + "] executed failed.");
     }
 }
