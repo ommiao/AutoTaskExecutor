@@ -1,6 +1,8 @@
 package cn.ommiao.autotaskexecutor;
 
+import android.content.ContentValues;
 import android.content.Context;
+import android.net.Uri;
 
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.platform.app.InstrumentationRegistry;
@@ -198,7 +200,7 @@ public class AutoTaskTest {
         executeResult.endTime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.CHINA).format(new Date());
         executeResult.success = true;
         Logger.d("Task [id:" + task.taskId + ", name:" + task.taskName + "] executed successfully.");
-        writeExecuteResult();
+        reportExecuteResult();
     }
 
     private void execTaskFail(String errorReason){
@@ -206,11 +208,14 @@ public class AutoTaskTest {
         executeResult.success = false;
         executeResult.errorReason = errorReason;
         Logger.d("Task [id:" + task.taskId + ", name:" + task.taskName + "] executed failed.");
-        writeExecuteResult();
+        reportExecuteResult();
     }
 
-    private void writeExecuteResult(){
-        FileUtil.writeExecuteResult(executeResult.toJson());
+    private void reportExecuteResult(){
+        Uri uri = Uri.parse("content://cn.ommiao.autotask.provider/executeresult");
+        ContentValues values = new ContentValues();
+        values.put("executeResult", executeResult.toJson());
+        context.getContentResolver().insert(uri, values);
     }
 
 
