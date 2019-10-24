@@ -20,15 +20,19 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 
-import cn.ommiao.autotaskexecutor.utils.ToastUtil;
 import cn.ommiao.base.entity.actionhelper.BaseActionHelper;
 import cn.ommiao.base.entity.order.ExceptionEvent;
+import cn.ommiao.base.entity.order.ExecuteResult;
 import cn.ommiao.base.entity.order.Group;
 import cn.ommiao.base.entity.order.Order;
 import cn.ommiao.base.entity.order.Task;
 import cn.ommiao.base.entity.order.UiInfo;
 import cn.ommiao.base.exception.InjectEventException;
+import cn.ommiao.base.exception.ShellCommandException;
 import cn.ommiao.base.util.FileUtil;
 import cn.ommiao.base.util.OrderUtil;
 import cn.ommiao.base.util.StringUtil;
@@ -49,6 +53,7 @@ public class AutoTaskTest {
     private Context context;
     private UiDevice uiDevice;
     private Task task;
+    private ExecuteResult executeResult;
 
     @Before
     public void init() {
@@ -70,12 +75,15 @@ public class AutoTaskTest {
         }
         Logger.d(taskJson);
         task = Task.fromJson(taskJson, Task.class);
+        executeResult = new ExecuteResult();
+        executeResult.taskId = task.taskId;
+        executeResult.taskName = task.taskName;
         assert task.groups.size() > 0;
     }
     
     @Test
     public void test() {
-
+        executeResult.startTime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.CHINA).format(new Date());
         while (true){
             if(task.groups.size() == 0){
                 break;
@@ -158,14 +166,16 @@ public class AutoTaskTest {
                                 break;
                         }
                         if(e instanceof UiObjectNotFoundException){
-                            execTaskFail();
+                            execTaskFail(e.getMessage());
                             return;
                         } else if(e instanceof InjectEventException){
-                            ToastUtil.shortToast("无法执行USB模拟点击：" + e.getMessage());
-                            execTaskFail();
+                            execTaskFail("无法执行USB模拟点击：" + e.getMessage());
                             return;
-                        } else if(e instanceof InterruptedException || e instanceof IOException){
-                            execTaskFail();
+                        } else if(e instanceof ShellCommandException){
+                            execTaskFail("无法执行命令：" + e.getMessage());
+                            return;
+                        }  else if(e instanceof InterruptedException || e instanceof IOException){
+                            execTaskFail("未知错误：" + e.getMessage());
                             return;
                         }
                     }
@@ -185,10 +195,23 @@ public class AutoTaskTest {
     }
 
     private void execTaskSuccess(){
+        executeResult.endTime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.CHINA).format(new Date());
+        executeResult.success = true;
         Logger.d("Task [id:" + task.taskId + ", name:" + task.taskName + "] executed successfully.");
+        writeExecuteResult();
     }
 
-    private void execTaskFail(){
+    private void execTaskFail(String errorReason){
+        executeResult.endTime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.CHINA).format(new Date());
+        executeResult.success = false;
+        executeResult.errorReason = errorReason;
         Logger.d("Task [id:" + task.taskId + ", name:" + task.taskName + "] executed failed.");
+        writeExecuteResult();
     }
+
+    private void writeExecuteResult(){
+        FileUtil.writeExecuteResult(executeResult.toJson());
+    }
+
+
 }
