@@ -169,29 +169,11 @@ public class AutoTaskTest {
                                 endFlag = true;
                                 break;
                             case ERROR:
-                                if(e instanceof UiObjectNotFoundException){
-                                    execTaskFail(e.getMessage());
-                                    return;
-                                }
-                                if(e instanceof WaitTooLongException){
-                                    execTaskFail(e.getMessage());
-                                    return;
-                                } else if(e instanceof InjectEventException){
-                                    execTaskFail("无法执行USB模拟点击：" + e.getMessage());
-                                    return;
-                                } else if(e instanceof ShellCommandException){
-                                    execTaskFail("无法执行命令：" + e.getMessage());
-                                    return;
-                                }  else if(e instanceof InterruptedException || e instanceof IOException){
-                                    execTaskFail("未知错误：" + e.getMessage());
-                                    return;
-                                }
-                                break;
+                                handleException(e);
+                                return;
                         }
                     }
-                    if(endFlag){
-                        break;
-                    }
+                    break;
                 }
                 if(endFlag){
                     break;
@@ -202,6 +184,22 @@ public class AutoTaskTest {
 
         execTaskSuccess();
 
+    }
+
+    private void handleException(Exception e){
+        if(e instanceof UiObjectNotFoundException){
+            execTaskFail(e.getMessage());
+        } else if(e instanceof WaitTooLongException){
+            execTaskFail(e.getMessage());
+        } else if(e instanceof InjectEventException){
+            execTaskFail("无法执行USB模拟点击：" + e.getMessage());
+        } else if(e instanceof ShellCommandException){
+            execTaskFail("无法执行命令：" + e.getMessage());
+        } else if(e instanceof InterruptedException || e instanceof IOException){
+            execTaskFail("未知错误：" + e.getMessage());
+        } else {
+            execTaskFail(e.getMessage());
+        }
     }
 
     private void execTaskSuccess(){
