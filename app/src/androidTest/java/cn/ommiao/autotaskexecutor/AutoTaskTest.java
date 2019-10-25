@@ -26,7 +26,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
-import cn.ommiao.base.entity.actionhelper.BaseActionHelper;
+import cn.ommiao.base.actionhelper.BaseActionHelper;
 import cn.ommiao.base.entity.order.ExceptionEvent;
 import cn.ommiao.base.entity.order.ExecuteResult;
 import cn.ommiao.base.entity.order.Group;
@@ -217,6 +217,13 @@ public class AutoTaskTest {
         ContentValues values = new ContentValues();
         values.put("executeResult", executeResult.toJson());
         context.getContentResolver().insert(uri, values);
+        if(task.startMain){
+            try {
+                uiDevice.executeShellCommand(ShellCommands.getStartMainCommand());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
 
