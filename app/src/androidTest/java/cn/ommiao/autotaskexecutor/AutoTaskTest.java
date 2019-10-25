@@ -35,6 +35,7 @@ import cn.ommiao.base.entity.order.Task;
 import cn.ommiao.base.entity.order.UiInfo;
 import cn.ommiao.base.exception.InjectEventException;
 import cn.ommiao.base.exception.ShellCommandException;
+import cn.ommiao.base.exception.WaitTooLongException;
 import cn.ommiao.base.util.FileUtil;
 import cn.ommiao.base.util.OrderUtil;
 import cn.ommiao.base.util.StringUtil;
@@ -100,7 +101,7 @@ public class AutoTaskTest {
                         break;
                     }
                     Order order = group.orders.get(orderIndex);
-                    long timeout = order.timeout == 0 ? DEFAULT_TIMEOUT : order.timeout;
+                    long timeout = order.executeParam.WIDGET_NOT_FOUND_TIMEOUT == 0 ? DEFAULT_TIMEOUT : order.executeParam.WIDGET_NOT_FOUND_TIMEOUT;
                     Configurator.getInstance().setWaitForSelectorTimeout(timeout < 1000 ? 1000 : timeout);
                     SelectorBuilder builder = SelectorBuilder.getInstance();
                     UiObject uiObject;
@@ -167,19 +168,25 @@ public class AutoTaskTest {
                             case IGNORE_GROUP:
                                 endFlag = true;
                                 break;
-                        }
-                        if(e instanceof UiObjectNotFoundException){
-                            execTaskFail(e.getMessage());
-                            return;
-                        } else if(e instanceof InjectEventException){
-                            execTaskFail("无法执行USB模拟点击：" + e.getMessage());
-                            return;
-                        } else if(e instanceof ShellCommandException){
-                            execTaskFail("无法执行命令：" + e.getMessage());
-                            return;
-                        }  else if(e instanceof InterruptedException || e instanceof IOException){
-                            execTaskFail("未知错误：" + e.getMessage());
-                            return;
+                            case ERROR:
+                                if(e instanceof UiObjectNotFoundException){
+                                    execTaskFail(e.getMessage());
+                                    return;
+                                }
+                                if(e instanceof WaitTooLongException){
+                                    execTaskFail(e.getMessage());
+                                    return;
+                                } else if(e instanceof InjectEventException){
+                                    execTaskFail("无法执行USB模拟点击：" + e.getMessage());
+                                    return;
+                                } else if(e instanceof ShellCommandException){
+                                    execTaskFail("无法执行命令：" + e.getMessage());
+                                    return;
+                                }  else if(e instanceof InterruptedException || e instanceof IOException){
+                                    execTaskFail("未知错误：" + e.getMessage());
+                                    return;
+                                }
+                                break;
                         }
                     }
                     if(endFlag){
