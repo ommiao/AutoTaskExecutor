@@ -28,7 +28,7 @@ public class SelectorBuilder {
     }
 
     public BySelector buildBySelector(){
-        BySelector bySelector = By.descContains("");
+        BySelector bySelector = null;
         for (FindRule findRule : uiInfo.findRules.keySet()) {
             bySelector = findRule.bindSelector(bySelector, uiInfo.findRules.get(findRule));
         }

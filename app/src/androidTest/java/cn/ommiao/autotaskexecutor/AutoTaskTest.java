@@ -13,6 +13,7 @@ import androidx.test.uiautomator.UiDevice;
 import androidx.test.uiautomator.UiObject;
 import androidx.test.uiautomator.UiObject2;
 import androidx.test.uiautomator.UiObjectNotFoundException;
+import androidx.test.uiautomator.UiScrollable;
 import androidx.test.uiautomator.UiSelector;
 
 import com.orhanobut.logger.Logger;
@@ -31,10 +32,14 @@ import cn.ommiao.base.entity.order.ExceptionEvent;
 import cn.ommiao.base.entity.order.ExecuteResult;
 import cn.ommiao.base.entity.order.Group;
 import cn.ommiao.base.entity.order.Order;
+import cn.ommiao.base.entity.order.ScrollType;
 import cn.ommiao.base.entity.order.Task;
 import cn.ommiao.base.entity.order.UiInfo;
+import cn.ommiao.base.entity.order.UiInfoParent;
+import cn.ommiao.base.exception.IllegalFindRuleException;
 import cn.ommiao.base.exception.InjectEventException;
 import cn.ommiao.base.exception.ShellCommandException;
+import cn.ommiao.base.exception.StopGroupException;
 import cn.ommiao.base.exception.WaitTooLongException;
 import cn.ommiao.base.util.FileUtil;
 import cn.ommiao.base.util.OrderUtil;
@@ -93,6 +98,9 @@ public class AutoTaskTest {
                 break;
             }
             Group group = task.groups.get(0);
+            if(group.repeatTimes == 0){
+                group.repeatTimes = Integer.MAX_VALUE;
+            }
             for(int i = 0; i < group.repeatTimes; i++){
                 int orderIndex = 0;
                 boolean endFlag = false;
@@ -110,27 +118,42 @@ public class AutoTaskTest {
                     BySelector bySelector, bySelectorP;
                     try {
 
-                        UiInfo uiInfo = order.uiInfo;
-                        builder.bind(uiInfo);
-                        uiSelector = builder.buildUiSelector();
-                        bySelector = builder.buildBySelector();
-
-                        if(order.uiInfo.parent != null){
-                            UiInfo parent = order.uiInfo.parent;
-                            builder.bind(parent);
-                            uiSelectorP = builder.buildUiSelector();
-                            bySelectorP = builder.buildBySelector();
-                            uiObject = uiDevice.findObject(uiSelectorP).getChild(uiSelector);
-                            uiObject2 = uiDevice.findObject(bySelectorP).findObject(bySelector);
-                        } else {
-                            uiObject = uiDevice.findObject(uiSelector);
-                            uiObject2 = uiDevice.findObject(bySelector);
-                        }
-
                         BaseActionHelper actionHelper = order.action.getActionHelper().with(order);
+
                         if(actionHelper.isGlobalAction()){
                             actionHelper.performGlobalAction(uiDevice);
                         } else {
+                            UiInfo uiInfo = order.uiInfo;
+                            if(uiInfo.findRules.size() == 0){
+                                throw new IllegalFindRuleException("No find rules.");
+                            }
+                            builder.bind(uiInfo);
+                            uiSelector = builder.buildUiSelector();
+                            bySelector = builder.buildBySelector();
+
+                            UiInfoParent uiInfoParent = order.uiInfo.parent;
+                            if(uiInfoParent != null){
+                                UiInfo parent = order.uiInfo.parent;
+                                builder.bind(parent);
+                                uiSelectorP = builder.buildUiSelector();
+                                bySelectorP = builder.buildBySelector();
+                                if(uiInfoParent.scrollType == ScrollType.NONE){
+                                    uiObject = uiDevice.findObject(uiSelectorP).getChild(uiSelector);
+                                    uiObject2 = uiDevice.findObject(bySelectorP).findObject(bySelector);
+                                } else {
+                                    UiScrollable uiScrollable = new UiScrollable(uiSelectorP);
+                                    if(uiInfoParent.scrollType == ScrollType.HORIZONTAL){
+                                        uiScrollable.setAsHorizontalList();
+                                    }
+                                    uiObject = uiDevice.findObject(uiSelector);
+                                    uiObject2 = uiDevice.findObject(bySelector);
+                                    uiScrollable.ensureFullyVisible(uiObject);
+                                    uiScrollable.scrollIntoView(uiSelector);
+                                }
+                            } else {
+                                uiObject = uiDevice.findObject(uiSelector);
+                                uiObject2 = uiDevice.findObject(bySelector);
+                            }
                             actionHelper.performWidgetAction(uiObject, uiObject2);
                         }
 
@@ -158,6 +181,10 @@ public class AutoTaskTest {
                             orderIndex++;
                             continue;
                         }
+                        if(e instanceof StopGroupException){
+                            endFlag = true;
+                            break;
+                        }
                         switch (order.exceptionEvent){
                             case RETRY:
                                 order.exceptionEvent = ExceptionEvent.ERROR;
@@ -169,7 +196,7 @@ public class AutoTaskTest {
                                 endFlag = true;
                                 break;
                             case ERROR:
-                                handleException(e);
+                                handleError(e);
                                 return;
                         }
                     }
@@ -186,8 +213,10 @@ public class AutoTaskTest {
 
     }
 
-    private void handleException(Exception e){
-        if(e instanceof UiObjectNotFoundException){
+    private void handleError(Exception e){
+        if(e instanceof IllegalFindRuleException){
+            execTaskFail(e.getMessage());
+        } else if(e instanceof UiObjectNotFoundException){
             execTaskFail(e.getMessage());
         } else if(e instanceof WaitTooLongException){
             execTaskFail(e.getMessage());
