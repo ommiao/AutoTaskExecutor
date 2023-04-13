@@ -235,7 +235,7 @@ public class AutoTaskTest {
         executeResult.endTime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.CHINA).format(new Date());
         executeResult.success = true;
         Logger.d("Task [id:" + task.taskId + ", name:" + task.taskName + "] executed successfully.");
-        reportExecuteResult();
+//        reportExecuteResult();
     }
 
     private void execTaskFail(String errorReason){
@@ -243,7 +243,7 @@ public class AutoTaskTest {
         executeResult.success = false;
         executeResult.errorReason = errorReason;
         Logger.d("Task [id:" + task.taskId + ", name:" + task.taskName + "] executed failed.");
-        reportExecuteResult();
+//        reportExecuteResult();
     }
 
     private void reportExecuteResult(){

@@ -1,3 +1,2 @@
 include ':app'
 include(':base')
-project(':base').projectDir = new File('../AutoTask/base')
